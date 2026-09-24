@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 # змейка на python, натыкался инструкцию с turtle и решил попробовать
 # запуск: python snake.py
-# управление: стрелочки, выход - Esc
+# управление: WASD или стрелочки, выход - Esc
 
+import os
 import random
 import time
 import turtle
+
+# куда пишем рекорд, рядом со скриптом
+SAVE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "best.txt")
 
 # настройки, можно крутить
 CELL = 20               # размер клетки
@@ -23,7 +27,27 @@ FOOD_COLOR = "#e94560"
 TEXT_COLOR = "#ffffff"
 
 score = 0
-best = 0  # рекорд, правда честный
+
+
+def load_best():
+    """читаем рекорд из файла, если файл первый раз - значит 0"""
+    try:
+        with open(SAVE_FILE) as f:
+            return int(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        return 0
+
+
+def save_best():
+    """сохраняем рекорд, чтобы не потеряться"""
+    try:
+        with open(SAVE_FILE, "w") as f:
+            f.write(str(best))
+    except OSError:
+        pass  # не смог записать - не страхо, просто рекорд не сохранится
+
+
+best = load_best()  # рекорд, правда честный
 
 
 def setup():
@@ -123,13 +147,19 @@ def main():
             dx, dy = CELL, 0
 
     screen.listen()
+    # стрелки
     screen.onkeypress(up, "Up")
     screen.onkeypress(down, "Down")
     screen.onkeypress(left, "Left")
     screen.onkeypress(right, "Right")
+    # и wasd тоже, кому так удобнее
+    screen.onkeypress(up, "w")
+    screen.onkeypress(down, "s")
+    screen.onkeypress(left, "a")
+    screen.onkeypress(right, "d")
     screen.onkeypress(screen.bye, "Escape")
 
-    write("Очки: 0", H // 2 - 40)
+    write(f"Очки: 0   Рекорд: {best}", H // 2 - 40)
 
     while True:
         screen.update()
@@ -162,7 +192,9 @@ def main():
             parts.append(new)
 
             score += 1
-            best = max(best, score)
+            if score > best:
+                best = score
+                save_best()  # сразу пишем в файл, чтобы не потерять
             place_food(food)
 
             # ускоряемся понемногу
@@ -176,6 +208,7 @@ def main():
 def game_over(screen):
     screen.clear()
     screen.bgcolor(BG)
+    save_best()  # на всякий случай пишем ещё раз
     screen.update()  # tracer выключен, без этого ничего не покажет
     t = turtle.Turtle()
     t.hideturtle()
