@@ -7,6 +7,7 @@ import os
 import random
 import time
 import turtle
+from tkinter import TclError
 
 # куда пишем рекорд, рядом со скриптом
 SAVE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "best.txt")
@@ -125,6 +126,7 @@ def main():
 
     dx, dy = CELL, 0  # летим вправо
     delay = SPEED_START
+    running = True  # флаг: игра идёт, а не крутится вхолостую
 
     def up():
         nonlocal dx, dy
@@ -145,6 +147,12 @@ def main():
         nonlocal dx, dy
         if dx == 0:
             dx, dy = CELL, 0
+
+    def quit_game():
+        # вместо screen.bye(): тот сразу убивает холст, а цикл еще крутится
+        # и падает с "invalid command name". Аккуратно выходим через флаг.
+        nonlocal running
+        running = False
 
     screen.listen()
     # стрелки - они нормально биндятся через onkeypress
@@ -169,11 +177,14 @@ def main():
 
     screen.cv.bind("<KeyPress>", handle_key)
 
-    screen.onkeypress(screen.bye, "Escape")
+    screen.onkeypress(quit_game, "Escape")
+    # крестик тоже закрываем через флаг, а не даем tkinter убить холст под ногами
+    # (у turtle нет метода protocol(), достаем корневое окно через холст)
+    screen.cv.master.protocol("WM_DELETE_WINDOW", quit_game)
 
     write(f"Очки: 0   Рекорд: {best}", H // 2 - 40)
 
-    while True:
+    while running:
         screen.update()
         time.sleep(delay / 1000)
 
@@ -214,7 +225,8 @@ def main():
 
             write(f"Очки: {score}   Рекорд: {best}", H // 2 - 40)
 
-    screen.mainloop()
+    # вышли по Esc или крестику - теперь можно закрывать окно
+    screen.bye()
 
 
 def game_over(screen):
@@ -242,4 +254,8 @@ def game_over(screen):
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except TclError:
+        # окно успели закрыть пока цикл работал - выходим тихо, это не баг
+        pass
