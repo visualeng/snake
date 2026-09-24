@@ -147,24 +147,27 @@ def main():
             dx, dy = CELL, 0
 
     screen.listen()
-    # стрелки
+    # стрелки - они нормально биндятся через onkeypress
     screen.onkeypress(up, "Up")
     screen.onkeypress(down, "Down")
     screen.onkeypress(left, "Left")
     screen.onkeypress(right, "Right")
 
-    # wasd - но тут засада: turtle ловит символ на клавише,
-    # а в русской раскладке w = ц, a = ф, s = ы, d = в
-    # поэтому вешаем всё сразу, плюс заглавные на случай Caps Lock
-    combos = {
-        up:    ["w", "W", "ц", "Ц"],
-        down:  ["s", "S", "ы", "Ы"],
-        left:  ["a", "A", "ф", "Ф"],
-        right: ["d", "D", "в", "В"],
-    }
-    for func, keys in combos.items():
-        for k in keys:
-            screen.onkeypress(func, k)
+    # wasd: у turtle бинд по символу, а в русской раскладке приходит "ц"
+    # и кириллицу через onkeypress забиндить нельзя (tk падает с bad keysym),
+    # поэтому вешаем один общий обработчик на canvas и сами смотрим что за символ
+    def handle_key(event):
+        ch = (event.char or "").lower()
+        if ch in ("w", "ц"):
+            up()
+        elif ch in ("s", "ы"):
+            down()
+        elif ch in ("a", "ф"):
+            left()
+        elif ch in ("d", "в"):
+            right()
+
+    screen.cv.bind("<KeyPress>", handle_key)
 
     screen.onkeypress(screen.bye, "Escape")
 
