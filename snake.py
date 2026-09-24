@@ -152,11 +152,20 @@ def main():
     screen.onkeypress(down, "Down")
     screen.onkeypress(left, "Left")
     screen.onkeypress(right, "Right")
-    # и wasd тоже, кому так удобнее
-    screen.onkeypress(up, "w")
-    screen.onkeypress(down, "s")
-    screen.onkeypress(left, "a")
-    screen.onkeypress(right, "d")
+
+    # wasd - но тут засада: turtle ловит символ на клавише,
+    # а в русской раскладке w = ц, a = ф, s = ы, d = в
+    # поэтому вешаем всё сразу, плюс заглавные на случай Caps Lock
+    combos = {
+        up:    ["w", "W", "ц", "Ц"],
+        down:  ["s", "S", "ы", "Ы"],
+        left:  ["a", "A", "ф", "Ф"],
+        right: ["d", "D", "в", "В"],
+    }
+    for func, keys in combos.items():
+        for k in keys:
+            screen.onkeypress(func, k)
+
     screen.onkeypress(screen.bye, "Escape")
 
     write(f"Очки: 0   Рекорд: {best}", H // 2 - 40)
